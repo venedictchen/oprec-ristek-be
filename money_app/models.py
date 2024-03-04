@@ -45,6 +45,25 @@ class Items(models.Model):
 
     def __str__(self):
         return self.title
-    
+
+
+class Goals(models.Model):
+    title = models.CharField(max_length=100)
+    description = models.CharField(max_length=200, blank=True)
+    amount = models.IntegerField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.title
+
+
+
+class ProfileUser(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    balance = models.IntegerField(default=0)    
+    income = models.IntegerField(default=0)
+    expenses = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.user.username
     
     
