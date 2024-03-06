@@ -56,13 +56,13 @@ class Goals(models.Model):
         return self.title
 
 
-
 class ProfileUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     balance = models.IntegerField(default=0)    
     income = models.IntegerField(default=0)
     expenses = models.IntegerField(default=0)
-
+    last_transaction_amount = models.IntegerField(default=0)
+    last_transaction_type = models.CharField(max_length=10, default="")
     def __str__(self):
         return self.user.username
     

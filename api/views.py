@@ -8,24 +8,25 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from money_app.models import ProfileUser
 from money_app.forms import ProfileUserForm
-
+import json
 import re
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny
 # Create your views here.
 
-csrf_exempt
+
 @csrf_exempt
 def login(request):
     if not request.method == 'POST':
-        return JsonResponse({'error': 'Send a post request with valid parameters only'})
+        return JsonResponse({'error': 'Send a post request with valid parameters only'},status=400)
 
-    username = request.POST.get('username')
-    password = request.POST.get('password')
-
+    data = json.loads(request.body)
+    username = data.get('username')
+    password = data.get('password')
+    print(data)
     if len(password) < 8:
-        return JsonResponse({'error': 'Password needs to be at least 8 characters long'})
+        return JsonResponse({'error': 'Password needs to be at least 8 characters long',},status=400)
 
     user = authenticate(request, username=username, password=password)
 
@@ -36,23 +37,26 @@ def login(request):
 
         response_data = {
             'success': 'Login successful',
-            'user': {
                 'username': user.username,
                 'user_id': user.id,
                 'email': user.email,
                 'balance': profile_user.balance,
                 'income': profile_user.income,
                 'expenses': profile_user.expenses,
-            }
+                'last_transaction_amount': profile_user.last_transaction_amount,    
+                'last_transaction_type': profile_user.last_transaction_type
+        
         }
 
         return JsonResponse(response_data)
     else:
+        print("masuksini")  
         return JsonResponse({'error': 'Invalid credentials'}, status=400)
 
 @csrf_exempt
 def logout(request):
     username = request.user.username
+    
     try:
         auth_logout(request)
         return JsonResponse({
@@ -70,9 +74,11 @@ def register(request):
     if not request.method == 'POST':
         return JsonResponse({'error': 'Send a post request with valid parameter only'})
 
-    username = request.POST.get('username')
-    email = request.POST.get('email')
-    password = request.POST.get('password')
+    data = json.loads(request.body)
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    
 
     if not re.match("^[\w\.\+\-]+\@[\w]+\.[a-z]{2,3}$", email):
         return JsonResponse({'error': 'Enter a valid email'}, status=400)
@@ -90,7 +96,7 @@ def register(request):
         user.set_password(password)
         user.save()
         ProfileUser.objects.create(user=user)
-        return JsonResponse({'success': 'User created successfully'})
+        return JsonResponse({'success': 'User created successfully'},status=201)
     except UserModel.DoesNotExist:
         return JsonResponse({'error': 'Invalid email'}, status=400)
 

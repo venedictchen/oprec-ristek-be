@@ -8,6 +8,7 @@ from .serializers import ItemSerializer
 from .models import Goals, Items, ProfileUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 
 # Create your views here.
 
@@ -21,18 +22,22 @@ class UserItemViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 def add_item(request):
     if request.method == 'POST':
-       
         serializer = ItemSerializer(data=request.data)
-        profile = ProfileUser.objects.get(user=request.user)
+        profile = ProfileUser.objects.get(user=request.data['user'])
         amount = int(request.data['amount'])
+        user_id = int(request.data['user'])
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            serializer.save(user=User.objects.get(id=user_id))
             if request.data['itemType'] == 'income':
                 profile.balance += amount
                 profile.income += amount
+                profile.last_transaction_amount = amount
+                profile.last_transaction_type = 'income'
             elif request.data['itemType'] == 'expense':
                 profile.balance -= amount
                 profile.expenses += amount
+                profile.last_transaction_amount = amount
+                profile.last_transaction_type = 'expense'
             elif request.data['itemType'] == 'deposit':
                 profile.balance += amount
             profile.save()
@@ -84,22 +89,26 @@ def delete_item(request, pk):
 
 @csrf_exempt
 @api_view(['GET'])
-def list_items(request):
-    items = Items.objects.filter(user=request.user.id)
+def list_items(request,pk):
+    items = Items.objects.filter(user=pk)
     serializer = ItemSerializer(items, many=True)
     return Response(serializer.data)
 
-@login_required
+
 @api_view(['GET'])
-def user_dashboard(request):
-    profile = ProfileUser.objects.get(user=request.user)
+def user_dashboard(request,pk):
+    print("masuk")
+    profile = ProfileUser.objects.get(user=pk)
+    user = User.objects.get(id=pk)
     return Response({
-        "username": request.user.username,
-        "user_id": request.user.id,
-        "email": request.user.email,
+        "username": user.username,
+        "user_id": user.id,
+        "email": user.email,
         "balance": profile.balance,
         "income": profile.income,
         "expenses": profile.expenses,
+        "last_transaction_amount": profile.last_transaction_amount,
+        "last_transaction_type": profile.last_transaction_type
     })
     
 @csrf_exempt
@@ -125,4 +134,48 @@ def list_goals(request):
     goals = Goals.objects.filter(user=request.user.id)
     return Response({
         "goals": goals
+    })
+
+@csrf_exempt
+@api_view(['DELETE'])
+def delete_goal(request, pk):
+    try:
+        goal = Goals.objects.filter(user=request.user, id=pk)
+        goal = Goals.objects.get(id=pk)
+    except ObjectDoesNotExist:
+        return Response({
+            "error": "Goal not found"
+        })
+    if request.method == 'DELETE':
+        goal.delete()
+        return Response({
+            "message": "Goal deleted"
+        })
+    return Response({
+        "error": "Invalid request"
+    })
+
+@csrf_exempt
+@api_view(['PUT'])
+def update_goal(request, pk):
+    try:
+        goal = Goals.objects.filter(user=request.user, id=pk)
+        goal = Goals.objects.get(id=pk)
+    except ObjectDoesNotExist:
+        return Response({
+            "error": "Goal not found"
+        })
+    if request.method == 'PUT':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        amount = request.POST.get('amount')
+        goal.title = title
+        goal.description = description
+        goal.amount = amount
+        goal.save()
+        return Response({
+            "message": "Goal updated"
+        })
+    return Response({
+        "error": "Invalid request"
     })
