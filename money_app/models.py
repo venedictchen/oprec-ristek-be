@@ -3,31 +3,7 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 class Category(models.Model):
-    FOOD = 'food'
-    TRANSPORTATION = 'transportation'
-    LIVING = 'living'
-    COMMUNICATIONS = 'communications'
-    CLOTHES = 'clothes'
-    HEALTH = 'health'
-    TOILETRY = 'toiletry'
-    GIFTS = 'gifts'
-    ENTERTAINMENTS = 'entertainments'
-    OTHER = 'other'
-
-    CATEGORY_CHOICES = [
-        (FOOD, 'Food'),
-        (TRANSPORTATION, 'Transportation'),
-        (LIVING, 'Living'),
-        (COMMUNICATIONS, 'Communications'),
-        (CLOTHES, 'Clothes'),
-        (HEALTH, 'Health'),
-        (TOILETRY, 'Toiletry'),
-        (GIFTS, 'Gifts'),
-        (ENTERTAINMENTS, 'Entertainments'),
-        (OTHER, 'Other'),
-    ]
-    
-    name = models.CharField(max_length=100, choices=CATEGORY_CHOICES, unique=True)
+    name = models.CharField(max_length=100,unique=True)
 
 class Items(models.Model):
     ITEM_TYPE = [
